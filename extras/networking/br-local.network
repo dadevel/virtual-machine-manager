@@ -1,0 +1,36 @@
+# /etc/systemd/network/br-local.network
+
+[Match]
+Name=br-local
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+Description=Internal Bridge
+
+Address=172.30.253.1/24
+Address=fddd:172:30:253::1/64
+DHCPServer=yes
+IPv6PrefixDelegation=yes
+IPv6SendRA=yes
+IPForward=yes
+ConfigureWithoutCarrier=yes
+
+DNSDefaultRoute=no
+
+[DHCPServer]
+PoolOffset=32
+DNS=172.30.253.1
+EmitDNS=yes
+
+[IPv6SendRA]
+Managed=no
+OtherInformation=yes
+DNS=fddd:172:30:253::1
+EmitDNS=yes
+
+[IPv6Prefix]
+AddressAutoconfiguration=yes
+OnLink=yes
+Prefix=fddd:172:30:253::/64

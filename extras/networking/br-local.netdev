@@ -1,0 +1,5 @@
+# /etc/systemd/network/br-local.netdev
+
+[NetDev]
+Name=br-local
+Kind=bridge

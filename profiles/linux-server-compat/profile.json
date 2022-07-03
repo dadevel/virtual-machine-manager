@@ -1,0 +1,11 @@
+{
+  "machine_boot_mode": "bios",
+  "machine_display_mode": "none",
+  "machine_qemu_command": [
+    "qemu-system-{machine_architecture}",
+    "-boot", "order=d,menu=on",
+    "-drive", "media=disk,file={machine_disk_prefix}.{machine_disk_format},format={machine_disk_format},if=ide,aio=native,cache.direct=on,discard=unmap",
+    "-m", "size={machine_ram_size}",
+    "-netdev", "tap,model=e1000,ifname={machine_network_interface},script=no,downscript=no,vhost=on,mac={machine_mac}"
+  ]
+}
