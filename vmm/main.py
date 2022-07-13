@@ -112,7 +112,7 @@ def _generate_interface_name(name: str) -> str:
     hash = hashlib.md5()
     hash.update(name.encode())
     result = hash.hexdigest()
-    return VMM_INTERFACE_PREFIX + result[:VMM_INTERFACE_MAX_LENGTH - len(VMM_INTERFACE_PREFIX)]
+    return VMM_INTERFACE_PREFIX + result[:VMM_INTERFACE_MAX_LENGTH - len(VMM_INTERFACE_PREFIX) - 1]
 
 
 def _start_qemu(options: Namespace) -> None:
