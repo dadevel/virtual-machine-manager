@@ -67,7 +67,7 @@ def main():
 def command_list(_: Namespace) -> None:
     for path in VMM_STORAGE_DIR.glob('*/machine.json'):
         name = path.parent.name
-        print(name, _run('systemctl', '--user', 'is-active', f'{NAME}-{name}-qemu.service', capture=True).strip())
+        print(name, _run('systemctl', '--user', 'is-active', f'{NAME}-{name}-qemu.service', capture=True, check=False).strip())
 
 
 def command_create(args: Namespace) -> None:
