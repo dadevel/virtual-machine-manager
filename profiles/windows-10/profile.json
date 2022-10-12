@@ -1,9 +1,12 @@
 {
-  "windows_setup_url": "https://www.microsoft.com/en-us/software-download/windows10",
-  "windows_setup_filename": "windows-10-x64.iso",
+  "machine_os": "windows",
+  "machine_iso_url": "https://www.microsoft.com/en-us/software-download/windows10",
+  "machine_iso_filename": "windows-10-x64.iso",
   "virtio_driver_version": "w10",
   "machine_boot_mode": "efi",
   "machine_display_mode": "spice",
+  "machine_disk_size": "64g",
+  "machine_ram_size": "8g",
   "machine_qemu_command": [
     "qemu-system-{machine_architecture}",
     "-global", "driver=cfi.pflash01,property=secure,value=on",
@@ -18,7 +21,7 @@
     "-device", "virtio-balloon",
     "-cpu", "host,kvm=on,+hypervisor,+invtsc,l3-cache=on,migratable=no,hv_frequencies,kvm_pv_unhalt,hv_reenlightenment,hv_relaxed,hv_spinlocks=0x1fff,hv_stimer,hv_synic,hv_time,hv_vapic,hv_vendor_id=1234567890ab,hv_vpindex",
     "-smp", "dies=1,sockets=1,cores={machine_cpu_cores},threads={machine_cpu_threads}",
-    "-machine", "type=q35,accel=kvm",
+    "-machine", "type=q35,accel=kvm,smm=on",
     "-enable-kvm",
     "-device", "intel-iommu",
     "-netdev", "type=tap,id=network0,ifname={machine_network_interface},script=no,downscript=no,vhost=on",

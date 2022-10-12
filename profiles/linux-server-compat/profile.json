@@ -1,4 +1,5 @@
 {
+  "machine_os": "linux",
   "machine_boot_mode": "bios",
   "machine_display_mode": "none",
   "machine_qemu_command": [

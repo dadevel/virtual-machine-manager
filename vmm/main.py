@@ -74,13 +74,16 @@ def command_create(args: Namespace) -> None:
     logging.info('creating machine')
     options = _get_setup_profile(args.profile, args.machine)
     Path(options.machine_storage_dir).mkdir(exist_ok=True)
-    _download_files(options)
+    setup_path = _gather_files(options)
     _setup_firmware_file(options)
     _setup_disk_file(options)
     options = _generate_mac(options)
-    _build_unattended_iso(options)
     _writing_machine_config(options)
-    options.machine_cdroms = [VMM_IMAGE_DIR/options.windows_setup_filename, VMM_IMAGE_DIR/options.virtio_driver_filename, VMM_STORAGE_DIR/options.machine_name/'unattended.iso']
+    if options.machine_os == 'windows':
+        _build_unattended_iso(options)
+        options.machine_cdroms = [setup_path, VMM_IMAGE_DIR/options.virtio_driver_filename, VMM_STORAGE_DIR/options.machine_name/'unattended.iso']
+    else:
+        options.machine_cdroms = [setup_path]
     input('press enter to boot')
     logging.info('booting machine')
     _setup_network(options)
@@ -133,16 +136,12 @@ def _start_qemu(options: Namespace) -> None:
     else:
         tpm_args = []
 
-    ok = _test(
-        'systemd-run',
+    _systemd_run(
         '--user', '--quiet', '--collect',
         '--unit', f'{NAME}-{options.machine_name}-qemu.service',
         '--property', f'RuntimeDirectory={NAME}/{options.machine_name}',
         '--', *qemu_args, *cdrom_args, *tpm_args,
     )
-    if not ok:
-        _run('journalctl', '--user', '--output', 'cat', '--no-pager', '--unit', f'{NAME}-{options.machine_name}-qemu.service')
-        exit(1)
 
 
 def _format_qemu_command(command: list[str], variables: dict[str, Any]) -> list[str]:
@@ -153,8 +152,8 @@ def _start_swtmp(options: Namespace) -> None:
     if not options.machine_tpm:
         return
     logging.info('starting swtpm')
-    _run(
-        'systemd-run', '--user', '--quiet', '--collect',
+    _systemd_run(
+        '--user', '--quiet', '--collect',
         '--unit', f'{NAME}-{options.machine_name}-swtpm.service',
         '--property', f'BindsTo={NAME}-{options.machine_name}-qemu.service',
         '--', 'swtpm', 'socket', '--tpmstate', f'dir={options.machine_tpm_dir}', '--ctrl', f'type=unixio,path={options.machine_tpm_socket}', '--tpm2',
@@ -165,8 +164,8 @@ def _start_spicy(options: Namespace) -> None:
     if options.machine_display_mode != 'spice':
         return
     logging.info('starting spicy')
-    _run(
-        'systemd-run', '--user', '--quiet', '--collect',
+    _systemd_run(
+        '--user', '--quiet', '--collect',
         '--unit', f'{NAME}-{options.machine_name}-spicy.service',
         '--property', f'BindsTo={NAME}-{options.machine_name}-qemu.service',
         '--', 'spicy', '--uri', f'spice+unix://{options.machine_spice_socket}',
@@ -229,8 +228,8 @@ def _get_default_profile(machine: str) -> Namespace:
         machine_ram_size='8g',
         machine_display_mode='none',
         machine_qemu_command=[],  # set in profile
-        windows_setup_url='',
-        windows_setup_filename='',
+        machine_iso_url='',
+        machine_iso_filename='',
         virtio_driver_url='https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso',
         virtio_driver_filename='virtio-win.iso',
         virtio_driver_version='',
@@ -246,15 +245,23 @@ def _get_default_profile(machine: str) -> Namespace:
     )
 
 
-def _download_files(options: Namespace) -> None:
-    logging.info('downloading files')
-    if options.windows_setup_filename:
-        path = VMM_IMAGE_DIR/options.windows_setup_filename
-        if not path.exists():
-            logging.critical(f'please download Windows ISO from {options.windows_setup_url} to {path}')
+def _gather_files(options: Namespace) -> Path:
+    logging.info('gathering files')
+    if options.machine_iso_filename:
+        setup_path = VMM_IMAGE_DIR/options.machine_iso_filename
+        if not setup_path.exists():
+            logging.critical(f'please download setup ISO from {options.machine_iso_url} to {setup_path}')
             exit(1)
-    _download_file(options.virtio_driver_url, VMM_IMAGE_DIR/options.virtio_driver_filename)
-    _download_file(options.spice_guest_tools_url, VMM_IMAGE_DIR/options.spice_guest_tools_filename)
+    else:
+        while True:
+            setup_path = Path(input('enter iso file path: ')).absolute()
+            if setup_path.is_file():
+                break
+            logging.error('invalid path given')
+    if options.machine_os == 'windows':
+        _download_file(options.virtio_driver_url, VMM_IMAGE_DIR/options.virtio_driver_filename)
+        _download_file(options.spice_guest_tools_url, VMM_IMAGE_DIR/options.spice_guest_tools_filename)
+    return setup_path
 
 
 def _setup_firmware_file(options: Namespace) -> None:
@@ -283,8 +290,6 @@ def _generate_mac(options: Namespace) -> Namespace:
 
 
 def _build_unattended_iso(options: Namespace) -> None:
-    if not options.windows_setup_url:
-        return
     logging.info('building unattended iso')
     machine_build_dir = Path(options.machine_build_dir)
     if machine_build_dir.exists():
@@ -317,9 +322,15 @@ def _random_hex_double_digit() -> str:
 def _download_file(url: str, dest: Path) -> None:
     if dest.exists():
         return
+    logging.info(f'downloading {url}')
     with urllib.request.urlopen(url) as response:
         body = response.read()
     dest.write_bytes(body)
+
+
+def _systemd_run(*args: int|str|Path) -> None:
+    logging.info(f'systemd-run {" ".join(str(arg) for arg in args)}')
+    _run('systemd-run', *args)
 
 
 def _test(*args: int|str|Path) -> bool:

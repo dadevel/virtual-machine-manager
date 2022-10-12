@@ -1,4 +1,5 @@
 {
+  "machine_os": "linux",
   "machine_boot_mode": "efi",
   "machine_display_mode": "spice",
   "machine_qemu_command": [
