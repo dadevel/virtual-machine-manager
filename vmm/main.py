@@ -151,6 +151,7 @@ def _format_qemu_command(command: list[str], variables: dict[str, Any]) -> list[
 def _start_swtmp(options: Namespace) -> None:
     if not options.machine_tpm:
         return
+    options.machine_tpm_dir.mkdir(exists_ok=True)
     logging.info('starting swtpm')
     _systemd_run(
         '--user', '--quiet', '--collect',
