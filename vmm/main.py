@@ -80,8 +80,11 @@ def command_create(args: Namespace) -> None:
     options = _generate_mac(options)
     _writing_machine_config(options)
     if options.machine_os == 'windows':
-        _build_unattended_iso(options)
-        options.machine_cdroms = [setup_path, VMM_IMAGE_DIR/options.virtio_driver_filename, VMM_STORAGE_DIR/options.machine_name/'unattended.iso']
+        if Path(VMM_PROFILE_DIR/options.machine_guest_type/'unattended').is_dir():
+            _build_unattended_iso(options)
+            options.machine_cdroms = [setup_path, VMM_IMAGE_DIR/options.virtio_driver_filename, VMM_STORAGE_DIR/options.machine_name/'unattended.iso']
+        else:
+            options.machine_cdroms = [setup_path, VMM_IMAGE_DIR/options.virtio_driver_filename]
     else:
         options.machine_cdroms = [setup_path]
     input('press enter to boot')
@@ -151,7 +154,7 @@ def _format_qemu_command(command: list[str], variables: dict[str, Any]) -> list[
 def _start_swtmp(options: Namespace) -> None:
     if not options.machine_tpm:
         return
-    options.machine_tpm_dir.mkdir(exists_ok=True)
+    options.machine_tpm_dir.mkdir(exist_ok=True)
     logging.info('starting swtpm')
     _systemd_run(
         '--user', '--quiet', '--collect',
