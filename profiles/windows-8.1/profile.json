@@ -1,0 +1,29 @@
+{
+  "machine_os": "windows",
+  "machine_iso_url": "https://www.microsoft.com/en-gb/software-download/windows8ISO",
+  "machine_iso_filename": "windows-8.1-english-x64.iso",
+  "virtio_driver_version": "w8.1",
+  "machine_boot_mode": "efi",
+  "machine_display_mode": "spice",
+  "machine_disk_size": "64g",
+  "machine_ram_size": "8g",
+  "machine_qemu_command": [
+    "qemu-system-{machine_architecture}",
+    "-global", "driver=cfi.pflash01,property=secure,value=on",
+    "-drive", "if=pflash,format=raw,unit=0,file={machine_efi_code},readonly=on",
+    "-drive", "if=pflash,format=raw,unit=1,file={machine_efi_vars}",
+    "-no-hpet",
+    "-global", "kvm-pit.lost_tick_policy=discard",
+    "-global", "ICH9-LPC.disable_s3=1",
+    "-boot", "order=d,menu=on",
+    "-drive", "media=disk,file={machine_disk_prefix}.{machine_disk_format},format={machine_disk_format},if=ide,aio=native,cache.direct=on,discard=unmap",
+    "-m", "size={machine_ram_size}",
+    "-cpu", "host,kvm=on,+hypervisor,+invtsc,l3-cache=on,migratable=no,hv_frequencies,kvm_pv_unhalt,hv_reenlightenment,hv_relaxed,hv_spinlocks=0x1fff,hv_stimer,hv_synic,hv_time,hv_vapic,hv_vendor_id=1234567890ab,hv_vpindex",
+    "-smp", "dies=1,sockets=1,cores={machine_cpu_cores},threads={machine_cpu_threads}",
+    "-machine", "type=q35,accel=kvm,smm=on",
+    "-enable-kvm",
+    "-netdev", "type=tap,id=network0,ifname={machine_network_interface},script=no,downscript=no,vhost=on",
+    "-device", "driver=e1000,netdev=network0,mac={machine_mac}",
+    "-device", "qxl-vga,vgamem_mb=32"
+  ]
+}
